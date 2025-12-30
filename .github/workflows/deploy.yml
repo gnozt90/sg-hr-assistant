@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
+          # Removed cache: 'npm' to avoid errors if package-lock.json is missing
       - run: npm install
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
