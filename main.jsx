@@ -326,5 +326,296 @@ const AIChat = () => {
   );
 };
 
+const CPFCalculator = () => {
+  const [wage, setWage] = useState(5000);
+  const [ageGroup, setAgeGroup] = useState('lte55');
+  
+  // 2025 Rates
+  const CEILING = 7400; 
+  
+  const calculate = () => {
+    const applicableWage = Math.min(wage, CEILING);
+    let rates = { emp: 0.20, comp: 0.17 }; // <= 55
+
+    if (ageGroup === '55to60') rates = { emp: 0.16, comp: 0.155 }; // Updated 2025 estimates
+    if (ageGroup === '60to65') rates = { emp: 0.115, comp: 0.12 }; // Updated 2025 estimates
+    if (ageGroup === 'gt65') rates = { emp: 0.05, comp: 0.075 };
+
+    return {
+      employee: applicableWage * rates.emp,
+      employer: applicableWage * rates.comp,
+      total: applicableWage * (rates.emp + rates.comp)
+    };
+  };
+
+  const result = calculate();
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <div className="flex items-center mb-6">
+        <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg mr-3">
+          <DollarSign className="w-5 h-5" />
+        </div>
+        <h3 className="font-bold text-slate-800">Quick CPF Calculator (2025)</h3>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Monthly Gross Wage (OW)</label>
+            <input 
+              type="number" 
+              value={wage}
+              onChange={(e) => setWage(Number(e.target.value))}
+              className="w-full p-2 border border-slate-200 rounded focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
+            />
+            <p className="text-xs text-slate-400 mt-1">2025 Ceiling Cap: ${CEILING.toLocaleString()}</p>
+          </div>
+          
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Age Group</label>
+            <select 
+              value={ageGroup}
+              onChange={(e) => setAgeGroup(e.target.value)}
+              className="w-full p-2 border border-slate-200 rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+            >
+              <option value="lte55">55 and below</option>
+              <option value="55to60">Above 55 to 60</option>
+              <option value="60to65">Above 60 to 65</option>
+              <option value="gt65">Above 65</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="bg-emerald-50 rounded-lg p-4 space-y-3">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-600">Employee Share (Deducted):</span>
+            <span className="font-bold text-slate-800 font-mono">${result.employee.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-600">Employer Share (Added):</span>
+            <span className="font-bold text-slate-800 font-mono">${result.employer.toFixed(2)}</span>
+          </div>
+          <div className="border-t border-emerald-200 pt-3 flex justify-between items-center">
+            <span className="text-emerald-800 font-bold">Total Contribution:</span>
+            <span className="font-bold text-emerald-700 font-mono text-lg">${result.total.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- MAIN APP COMPONENT ---
+
+function App() {
+  const [activeTab, setActiveTab] = useState('home');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const renderContent = () => {
+    switch(activeTab) {
+      case 'home':
+        return (
+          <div className="space-y-6">
+            <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-8 rounded-2xl shadow-xl">
+              <h1 className="text-3xl font-bold mb-2">Singapore HR Portal</h1>
+              <p className="text-slate-300 max-w-2xl">
+                Your single source of truth for compliance, payroll, and employment laws. 
+                Updated for 2025 regulations including the new CPF Ceiling ($7,400) and Workplace Fairness Act.
+              </p>
+              <div className="flex gap-3 mt-6">
+                <button 
+                  onClick={() => setActiveTab('ai_agent')}
+                  className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg font-medium flex items-center transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Ask AI Agent
+                </button>
+                <button 
+                  onClick={() => setActiveTab('cpf')}
+                  className="bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-lg font-medium transition-colors"
+                >
+                  View CPF 2025 Rates
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                <div className="text-blue-600 bg-blue-50 w-10 h-10 rounded-full flex items-center justify-center mb-4">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-slate-800 mb-2">New: Shared Parental Leave</h3>
+                <p className="text-sm text-slate-500 mb-4">
+                  From April 1, 2025, the new Shared Parental Leave scheme adds 6 weeks of shared leave for parents.
+                </p>
+                <button onClick={() => setActiveTab('leave')} className="text-blue-600 text-sm font-semibold hover:underline">Read more &rarr;</button>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                <div className="text-emerald-600 bg-emerald-50 w-10 h-10 rounded-full flex items-center justify-center mb-4">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-slate-800 mb-2">CPF Ceiling Raised</h3>
+                <p className="text-sm text-slate-500 mb-4">
+                  The Ordinary Wage ceiling is now $7,400. Ensure payroll software is updated for Jan 2025 runs.
+                </p>
+                <button onClick={() => setActiveTab('cpf')} className="text-emerald-600 text-sm font-semibold hover:underline">Calculate &rarr;</button>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                <div className="text-purple-600 bg-purple-50 w-10 h-10 rounded-full flex items-center justify-center mb-4">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-slate-800 mb-2">Fair Employment</h3>
+                <p className="text-sm text-slate-500 mb-4">
+                  The Workplace Fairness Act is now law. Review hiring practices to avoid discrimination penalties.
+                </p>
+                <button onClick={() => setActiveTab('compliance')} className="text-purple-600 text-sm font-semibold hover:underline">Check Guidelines &rarr;</button>
+              </div>
+            </div>
+          </div>
+        );
+      case 'cpf':
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-2xl font-bold text-slate-800">CPF & Payroll</h2>
+            <CPFCalculator />
+            <InfoCard title="Latest CPF Regulations" data={LEGAL_DATA.cpf} />
+          </div>
+        );
+      case 'leave':
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-2xl font-bold text-slate-800">Leave & Time Off</h2>
+            <InfoCard title="Statutory Leave Entitlements" data={LEGAL_DATA.leave} />
+          </div>
+        );
+      case 'foreign':
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-2xl font-bold text-slate-800">Foreign Manpower</h2>
+            <InfoCard title="Work Passes & Quotas" data={LEGAL_DATA.work_passes} />
+          </div>
+        );
+      case 'compliance':
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-2xl font-bold text-slate-800">Compliance & Safety</h2>
+            <InfoCard title="Fair Employment & WSH" data={LEGAL_DATA.fairness} />
+          </div>
+        );
+      case 'ai_agent':
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">Compliance Assistant</h2>
+            <AIChat />
+          </div>
+        );
+      default:
+        return <div>Select a tab</div>;
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-slate-50 font-sans text-slate-900">
+      {/* Sidebar */}
+      <div className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-white border-r border-slate-200 transition-all duration-300 flex flex-col`}>
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          {isSidebarOpen ? (
+            <div className="flex items-center text-blue-700 font-bold text-xl tracking-tight">
+              <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center mr-2">SG</div>
+              HR<span className="text-slate-800">Hub</span>
+            </div>
+          ) : (
+             <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold">H</div>
+          )}
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4">
+          <SidebarItem 
+            icon={Briefcase} 
+            label={isSidebarOpen ? "Dashboard" : ""} 
+            active={activeTab === 'home'} 
+            onClick={() => setActiveTab('home')} 
+          />
+          <div className="my-4 border-t border-slate-100"></div>
+          <p className={`px-4 text-xs font-semibold text-slate-400 uppercase mb-2 ${!isSidebarOpen && 'hidden'}`}>Modules</p>
+          <SidebarItem 
+            icon={DollarSign} 
+            label={isSidebarOpen ? "CPF & Payroll" : ""} 
+            active={activeTab === 'cpf'} 
+            onClick={() => setActiveTab('cpf')} 
+          />
+          <SidebarItem 
+            icon={Users} 
+            label={isSidebarOpen ? "Leave & Benefits" : ""} 
+            active={activeTab === 'leave'} 
+            onClick={() => setActiveTab('leave')} 
+          />
+          <SidebarItem 
+            icon={BookOpen} 
+            label={isSidebarOpen ? "Work Passes" : ""} 
+            active={activeTab === 'foreign'} 
+            onClick={() => setActiveTab('foreign')} 
+          />
+          <SidebarItem 
+            icon={Shield} 
+            label={isSidebarOpen ? "Compliance" : ""} 
+            active={activeTab === 'compliance'} 
+            onClick={() => setActiveTab('compliance')} 
+          />
+          <div className="my-4 border-t border-slate-100"></div>
+           <button 
+            onClick={() => setActiveTab('ai_agent')}
+            className={`flex items-center w-full p-3 mb-2 rounded-lg transition-all ${
+              activeTab === 'ai_agent' 
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' 
+                : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+            }`}
+          >
+            <MessageSquare className="w-5 h-5 mr-3" />
+            <span className={`font-bold text-sm ${!isSidebarOpen && 'hidden'}`}>Ask AI Agent</span>
+          </button>
+        </div>
+
+        <button 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-4 border-t border-slate-100 flex items-center text-slate-500 hover:text-slate-800 transition-colors"
+        >
+          {isSidebarOpen ? <Users className="w-5 h-5 mr-2" /> : <Menu className="w-5 h-5 mx-auto" />}
+          {isSidebarOpen && <span className="text-sm font-medium">Collapse Menu</span>}
+        </button>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Top Navbar */}
+        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-8 shadow-sm z-10">
+          <h2 className="text-lg font-semibold text-slate-700 capitalize">
+            {activeTab === 'home' ? 'Overview' : activeTab.replace('_', ' ')}
+          </h2>
+          <div className="flex items-center space-x-4">
+            <span className="text-xs font-medium px-3 py-1 bg-green-100 text-green-700 rounded-full flex items-center">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Data Verified: Dec 30, 2025
+            </span>
+            <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold border border-slate-300">
+              HR
+            </div>
+          </div>
+        </header>
+
+        {/* Scrollable Content */}
+        <main className="flex-1 overflow-y-auto p-8">
+          <div className="max-w-5xl mx-auto">
+            {renderContent()}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
 const rootElement = document.getElementById('root');
 ReactDOM.render(<App />, rootElement);
