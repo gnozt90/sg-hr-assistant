@@ -15,7 +15,6 @@ import {
   Mail,
   Sparkles,
   Send,
-  MapPin,
   Clock,
   Zap
 } from 'lucide-react';
@@ -32,13 +31,6 @@ const JOB_SOURCES = [
   { name: "LinkedIn", searchUrl: "https://www.linkedin.com/jobs/search/?keywords=", color: "bg-blue-800", desc: "Professional Network" },
   { name: "Glints", searchUrl: "https://glints.com/sg/opportunities/jobs/explore?keyword=", color: "bg-red-500", desc: "Tech & Startups" },
   { name: "Foundit", searchUrl: "https://www.foundit.sg/srp/results?query=", color: "bg-purple-600", desc: "Formerly Monster" }
-];
-
-const PART_TIME_PLATFORMS = [
-  { name: "FastGig", url: "https://www.fastgig.sg", color: "bg-orange-500", desc: "Flexible Shifts" },
-  { name: "GrabJobs", url: "https://grabjobs.co/singapore/part-time-jobs", color: "bg-green-500", desc: "Quick Hire" },
-  { name: "Staffie", url: "https://staffie.com", color: "bg-purple-500", desc: "F&B & Events" },
-  { name: "Gumtree", url: "https://www.gumtree.sg/s-part-time-jobs/v1c28p1", color: "bg-green-800", desc: "Classifieds" },
 ];
 
 const LEGAL_DATA = {
@@ -168,16 +160,16 @@ const JobSearch = () => {
         `${API_BASE}/api/jobs?query=${encodeURIComponent(query)}`
       );
       if (!response.ok) {
-        throw new Error(`Job search failed (${response.status})`);
+        throw new Error("Live job aggregation is unavailable.");
       }
       const data = await response.json();
       setResults(data.jobs || []);
       setSources(data.sources || []);
       setApiErrors(data.errors || []);
     } catch (err) {
-      setError(err.message || "Unable to fetch jobs.");
+      setError(err.message || "Live job aggregation is unavailable.");
       setResults([]);
-      setSources([]);
+      setSources(getFallbackSources());
     } finally {
       setSearching(false);
     }
@@ -205,8 +197,8 @@ const JobSearch = () => {
       ) : (
         <div className="space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
-              {error}
+            <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm px-4 py-3 rounded-lg">
+              {error} You can still open job boards below.
             </div>
           )}
           {apiErrors.length > 0 && (
@@ -257,52 +249,6 @@ const JobSearch = () => {
           )}
         </div>
       )}
-    </div>
-  );
-};
-
-// --- PART TIME JOBS COMPONENT ---
-const PartTimeJobSearch = () => {
-  const JOBS = [
-    { id: 1, title: "Banquet Server", pay: "$12 - $15/hr", location: "Orchard", type: "Ad-hoc" },
-    { id: 2, title: "Retail Assistant", pay: "$10/hr", location: "Jurong East", type: "Shift" },
-    { id: 3, title: "Event Crew", pay: "$14/hr", location: "Marina Bay", type: "Weekend" },
-    { id: 4, title: "Warehouse Packer", pay: "$11/hr", location: "Changi", type: "Night Shift" },
-    { id: 5, title: "Data Entry", pay: "$12/hr", location: "Remote", type: "Contract" },
-  ];
-
-  return (
-    <div className="space-y-6 animate-fadeIn">
-       <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-8 rounded-2xl shadow-xl text-white">
-          <h2 className="text-2xl font-bold mb-2 flex items-center"><Clock className="w-6 h-6 mr-2" /> Part-Time & Gig Hub</h2>
-          <p className="text-emerald-100 mb-6">Find flexible shifts, weekend gigs, and ad-hoc work in Singapore.</p>
-          
-          <div className="flex flex-wrap gap-2">
-            {PART_TIME_PLATFORMS.map(p => (
-                <a key={p.name} href={p.url} target="_blank" rel="noreferrer" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center">
-                    {p.name} <ExternalLink className="w-3 h-3 ml-2 opacity-50"/>
-                </a>
-            ))}
-          </div>
-       </div>
-
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {JOBS.map(job => (
-              <div key={job.id} className="bg-white p-5 rounded-xl border border-slate-200 hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-slate-800">{job.title}</h3>
-                      <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full">{job.type}</span>
-                  </div>
-                  <div className="flex items-center text-slate-500 text-sm mb-4">
-                      <MapPin className="w-4 h-4 mr-1"/> {job.location}
-                  </div>
-                  <div className="flex justify-between items-center border-t border-slate-100 pt-3">
-                      <span className="font-bold text-lg text-slate-700">{job.pay}</span>
-                      <button className="text-emerald-600 font-bold text-sm hover:underline">View Details</button>
-                  </div>
-              </div>
-          ))}
-       </div>
     </div>
   );
 };
@@ -722,7 +668,7 @@ function App() {
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-8 rounded-2xl shadow-xl relative overflow-hidden">
               <div className="relative z-10">
-                <h1 className="text-3xl font-bold mb-2">Singapore HR Portal</h1>
+                <h1 className="text-3xl font-bold mb-2">Singapore HR Assistant (AI Powered)</h1>
                 <p className="text-slate-300 max-w-2xl">
                     Your one-stop platform for compliance, payroll, and job hunting in Singapore. 
                     Now powered by <span className="text-yellow-300 font-bold">Google Gemini ADK</span>.
@@ -742,12 +688,6 @@ function App() {
                 <p className="text-sm text-slate-500">Search across JobStreet, CareersFuture, and LinkedIn.</p>
               </button>
               
-              <button onClick={() => setActiveTab('part_time')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-all text-left group">
-                <div className="text-emerald-600 bg-emerald-50 w-10 h-10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><Clock className="w-5 h-5" /></div>
-                <h3 className="font-bold text-slate-800 mb-2">Part-Time & Gigs</h3>
-                <p className="text-sm text-slate-500">Find flexible shifts, ad-hoc jobs, and weekend work.</p>
-              </button>
-
               <button onClick={() => setActiveTab('part_time_board')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-all text-left group">
                 <div className="text-amber-600 bg-amber-50 w-10 h-10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><PlusCircle className="w-5 h-5" /></div>
                 <h3 className="font-bold text-slate-800 mb-2">Post Part-Time Jobs</h3>
@@ -770,7 +710,6 @@ function App() {
           </div>
         );
       case 'jobs': return <JobSearch />;
-      case 'part_time': return <PartTimeJobSearch />;
       case 'part_time_board': return <PartTimeBoard />;
       case 'cpf': return <div className="space-y-6 animate-fadeIn"><h2 className="text-2xl font-bold text-slate-800">CPF & Payroll</h2><InfoCard title="Latest CPF Regulations" data={LEGAL_DATA.cpf} /></div>;
       case 'leave': return <div className="space-y-6 animate-fadeIn"><h2 className="text-2xl font-bold text-slate-800">Leave & Time Off</h2><InfoCard title="Statutory Leave Entitlements" data={LEGAL_DATA.leave} /></div>;
@@ -787,7 +726,7 @@ function App() {
           {isSidebarOpen ? (
             <div className="flex items-center text-blue-700 font-bold text-xl tracking-tight">
               <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center mr-2">SG</div>
-              HR<span className="text-slate-800">Hub</span>
+              HR<span className="text-slate-800">Assistant</span>
             </div>
           ) : <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold">H</div>}
         </div>
@@ -796,7 +735,6 @@ function App() {
           <SidebarItem icon={Briefcase} label={isSidebarOpen ? "Dashboard" : ""} active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
           <div className="my-4 border-t border-slate-100"></div>
           <SidebarItem icon={Search} label={isSidebarOpen ? "Job Search" : ""} active={activeTab === 'jobs'} onClick={() => setActiveTab('jobs')} />
-          <SidebarItem icon={Clock} label={isSidebarOpen ? "Part-Time / Gigs" : ""} active={activeTab === 'part_time'} onClick={() => setActiveTab('part_time')} />
           <SidebarItem icon={PlusCircle} label={isSidebarOpen ? "Post Part-Time" : ""} active={activeTab === 'part_time_board'} onClick={() => setActiveTab('part_time_board')} />
           <SidebarItem icon={Shield} label={isSidebarOpen ? "CPF & Payroll" : ""} active={activeTab === 'cpf'} onClick={() => setActiveTab('cpf')} />
           <SidebarItem icon={Users} label={isSidebarOpen ? "Leave & Benefits" : ""} active={activeTab === 'leave'} onClick={() => setActiveTab('leave')} />
