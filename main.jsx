@@ -18,6 +18,13 @@ const JOB_PLATFORMS = [
   { name: "Foundit", url: "https://www.foundit.sg/srp/results?query=", color: "bg-purple-600", desc: "Formerly Monster" }
 ];
 
+const PART_TIME_PLATFORMS = [
+  { name: "FastGig", url: "https://www.fastgig.sg", color: "bg-orange-500", desc: "Flexible Shifts" },
+  { name: "GrabJobs", url: "https://grabjobs.co/singapore/part-time-jobs", color: "bg-green-500", desc: "Quick Hire" },
+  { name: "Staffie", url: "https://staffie.com", color: "bg-purple-500", desc: "F&B & Events" },
+  { name: "Gumtree", url: "https://www.gumtree.sg/s-part-time-jobs/v1c28p1", color: "bg-green-800", desc: "Classifieds" },
+];
+
 const LEGAL_DATA = {
   cpf: {
     title: "CPF & Contributions (2025)",
@@ -171,6 +178,52 @@ const JobSearch = () => {
           ))}
         </div>
       )}
+    </div>
+  );
+};
+
+// --- PART TIME JOBS COMPONENT ---
+const PartTimeJobSearch = () => {
+  const JOBS = [
+    { id: 1, title: "Banquet Server", pay: "$12 - $15/hr", location: "Orchard", type: "Ad-hoc" },
+    { id: 2, title: "Retail Assistant", pay: "$10/hr", location: "Jurong East", type: "Shift" },
+    { id: 3, title: "Event Crew", pay: "$14/hr", location: "Marina Bay", type: "Weekend" },
+    { id: 4, title: "Warehouse Packer", pay: "$11/hr", location: "Changi", type: "Night Shift" },
+    { id: 5, title: "Data Entry", pay: "$12/hr", location: "Remote", type: "Contract" },
+  ];
+
+  return (
+    <div className="space-y-6 animate-fadeIn">
+       <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-8 rounded-2xl shadow-xl text-white">
+          <h2 className="text-2xl font-bold mb-2 flex items-center"><Clock className="w-6 h-6 mr-2" /> Part-Time & Gig Hub</h2>
+          <p className="text-emerald-100 mb-6">Find flexible shifts, weekend gigs, and ad-hoc work in Singapore.</p>
+          
+          <div className="flex flex-wrap gap-2">
+            {PART_TIME_PLATFORMS.map(p => (
+                <a key={p.name} href={p.url} target="_blank" rel="noreferrer" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center">
+                    {p.name} <ExternalLink className="w-3 h-3 ml-2 opacity-50"/>
+                </a>
+            ))}
+          </div>
+       </div>
+
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {JOBS.map(job => (
+              <div key={job.id} className="bg-white p-5 rounded-xl border border-slate-200 hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-slate-800">{job.title}</h3>
+                      <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full">{job.type}</span>
+                  </div>
+                  <div className="flex items-center text-slate-500 text-sm mb-4">
+                      <MapPin className="w-4 h-4 mr-1"/> {job.location}
+                  </div>
+                  <div className="flex justify-between items-center border-t border-slate-100 pt-3">
+                      <span className="font-bold text-lg text-slate-700">{job.pay}</span>
+                      <button className="text-emerald-600 font-bold text-sm hover:underline">View Details</button>
+                  </div>
+              </div>
+          ))}
+       </div>
     </div>
   );
 };
@@ -368,6 +421,12 @@ function App() {
                 <h3 className="font-bold text-slate-800 mb-2">Job Search Hub</h3>
                 <p className="text-sm text-slate-500">Search across JobStreet, CareersFuture, and LinkedIn.</p>
               </button>
+              
+              <button onClick={() => setActiveTab('part_time')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-all text-left group">
+                <div className="text-emerald-600 bg-emerald-50 w-10 h-10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><Clock className="w-5 h-5" /></div>
+                <h3 className="font-bold text-slate-800 mb-2">Part-Time & Gigs</h3>
+                <p className="text-sm text-slate-500">Find flexible shifts, ad-hoc jobs, and weekend work.</p>
+              </button>
 
               <button onClick={() => setActiveTab('leave')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-all text-left group">
                 <div className="text-purple-600 bg-purple-50 w-10 h-10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><Shield className="w-5 h-5" /></div>
@@ -375,7 +434,7 @@ function App() {
                 <p className="text-sm text-slate-500">Check new Paternity Leave and Workplace Fairness rules.</p>
               </button>
 
-              <button onClick={() => setActiveTab('ai_agent')} className="bg-gradient-to-br from-indigo-50 to-violet-50 p-6 rounded-xl shadow-sm border border-indigo-100 hover:shadow-md transition-all text-left group relative overflow-hidden">
+              <button onClick={() => setActiveTab('ai_agent')} className="bg-gradient-to-br from-indigo-50 to-violet-50 p-6 rounded-xl shadow-sm border border-indigo-100 hover:shadow-md transition-all text-left group relative overflow-hidden md:col-span-3">
                 <div className="absolute top-0 right-0 p-2"><Sparkles className="w-12 h-12 text-indigo-100" /></div>
                 <div className="text-indigo-600 bg-indigo-100 w-10 h-10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><MessageSquare className="w-5 h-5" /></div>
                 <h3 className="font-bold text-indigo-900 mb-2">Ask AI Agent</h3>
@@ -385,6 +444,7 @@ function App() {
           </div>
         );
       case 'jobs': return <JobSearch />;
+      case 'part_time': return <PartTimeJobSearch />;
       case 'cpf': return <div className="space-y-6 animate-fadeIn"><h2 className="text-2xl font-bold text-slate-800">CPF & Payroll</h2><InfoCard title="Latest CPF Regulations" data={LEGAL_DATA.cpf} /></div>;
       case 'leave': return <div className="space-y-6 animate-fadeIn"><h2 className="text-2xl font-bold text-slate-800">Leave & Time Off</h2><InfoCard title="Statutory Leave Entitlements" data={LEGAL_DATA.leave} /></div>;
       case 'foreign': return <div className="space-y-6 animate-fadeIn"><h2 className="text-2xl font-bold text-slate-800">Foreign Manpower</h2><InfoCard title="Work Passes & Quotas" data={LEGAL_DATA.work_passes} /></div>;
@@ -409,6 +469,7 @@ function App() {
           <SidebarItem icon={Briefcase} label={isSidebarOpen ? "Dashboard" : ""} active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
           <div className="my-4 border-t border-slate-100"></div>
           <SidebarItem icon={Search} label={isSidebarOpen ? "Job Search" : ""} active={activeTab === 'jobs'} onClick={() => setActiveTab('jobs')} />
+          <SidebarItem icon={Clock} label={isSidebarOpen ? "Part-Time / Gigs" : ""} active={activeTab === 'part_time'} onClick={() => setActiveTab('part_time')} />
           <SidebarItem icon={Shield} label={isSidebarOpen ? "CPF & Payroll" : ""} active={activeTab === 'cpf'} onClick={() => setActiveTab('cpf')} />
           <SidebarItem icon={Users} label={isSidebarOpen ? "Leave & Benefits" : ""} active={activeTab === 'leave'} onClick={() => setActiveTab('leave')} />
           <SidebarItem icon={BookOpen} label={isSidebarOpen ? "Work Passes" : ""} active={activeTab === 'foreign'} onClick={() => setActiveTab('foreign')} />
