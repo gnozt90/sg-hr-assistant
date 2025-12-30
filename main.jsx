@@ -1,21 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-import { 
-  Briefcase, DollarSign, Shield, Users, Search, MessageSquare, 
-  BookOpen, Menu, X, ExternalLink, Globe, PlusCircle, Phone, Mail, 
-  Sparkles, Send, MapPin, Clock, Zap
+import {
+  Briefcase,
+  Shield,
+  Users,
+  Search,
+  MessageSquare,
+  BookOpen,
+  Menu,
+  ExternalLink,
+  Globe,
+  PlusCircle,
+  Phone,
+  Mail,
+  Sparkles,
+  Send,
+  MapPin,
+  Clock,
+  Zap
 } from 'lucide-react';
 import { HRAgent } from './agent';
 
 // --- DATA & CONFIG ---
 
-const JOB_PLATFORMS = [
-  { name: "MyCareersFuture", url: "https://www.mycareersfuture.gov.sg/search?search=", color: "bg-blue-600", desc: "Official SG Govt Portal" },
-  { name: "JobStreet", url: "https://www.jobstreet.com.sg/en/job-search/", suffix: "-jobs/", color: "bg-yellow-500", text: "text-black", desc: "Popular Commercial Board" },
-  { name: "Seek", url: "https://www.seek.com.sg/jobs?keywords=", color: "bg-pink-600", desc: "International Network" },
-  { name: "LinkedIn", url: "https://www.linkedin.com/jobs/search/?keywords=", color: "bg-blue-800", desc: "Professional Network" },
-  { name: "Glints", url: "https://glints.com/sg/opportunities/jobs/explore?keyword=", color: "bg-red-500", desc: "Tech & Startups" },
-  { name: "Foundit", url: "https://www.foundit.sg/srp/results?query=", color: "bg-purple-600", desc: "Formerly Monster" }
+const API_BASE = import.meta.env.VITE_API_BASE || "";
+
+const JOB_SOURCES = [
+  { name: "MyCareersFuture", searchUrl: "https://www.mycareersfuture.gov.sg/search?search=", color: "bg-blue-600", desc: "Official SG Govt Portal" },
+  { name: "JobStreet", searchUrl: "https://www.jobstreet.com.sg/en/job-search/", suffix: "-jobs/", color: "bg-yellow-500", text: "text-black", desc: "Popular Commercial Board" },
+  { name: "Seek", searchUrl: "https://www.seek.com.sg/jobs?keywords=", color: "bg-pink-600", desc: "International Network" },
+  { name: "LinkedIn", searchUrl: "https://www.linkedin.com/jobs/search/?keywords=", color: "bg-blue-800", desc: "Professional Network" },
+  { name: "Glints", searchUrl: "https://glints.com/sg/opportunities/jobs/explore?keyword=", color: "bg-red-500", desc: "Tech & Startups" },
+  { name: "Foundit", searchUrl: "https://www.foundit.sg/srp/results?query=", color: "bg-purple-600", desc: "Formerly Monster" }
 ];
 
 const PART_TIME_PLATFORMS = [
@@ -121,28 +137,50 @@ const InfoCard = ({ title, data }) => (
 const JobSearch = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  const [sources, setSources] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [error, setError] = useState("");
+  const [apiErrors, setApiErrors] = useState([]);
 
-  const simulateSearch = () => {
+  const getSourceBadge = (sourceName) => {
+    const source = JOB_SOURCES.find(
+      (item) => item.name.toLowerCase() === String(sourceName || "").toLowerCase()
+    );
+    return source ? `${source.color} ${source.text || ""}` : "bg-slate-600";
+  };
+
+  const getFallbackSources = () =>
+    JOB_SOURCES.map((source) => ({
+      name: source.name,
+      searchUrl: `${source.searchUrl}${encodeURIComponent(query)}${source.suffix || ""}`,
+    }));
+
+  const fetchJobs = async () => {
     if (!query.trim()) return;
     setSearching(true);
-    
-    setTimeout(() => {
-      const newResults = [];
-      JOB_PLATFORMS.forEach(platform => {
-        newResults.push({
-          id: Math.random(),
-          title: `${query} Role`,
-          company: "Demo Company Pte Ltd",
-          location: "Singapore",
-          salary: "Competitive",
-          platform: platform,
-          posted: "2 days ago"
-        });
-      });
-      setResults(newResults);
+    setHasSearched(true);
+    setError("");
+    setApiErrors([]);
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/jobs?query=${encodeURIComponent(query)}`
+      );
+      if (!response.ok) {
+        throw new Error(`Job search failed (${response.status})`);
+      }
+      const data = await response.json();
+      setResults(data.jobs || []);
+      setSources(data.sources || []);
+      setApiErrors(data.errors || []);
+    } catch (err) {
+      setError(err.message || "Unable to fetch jobs.");
+      setResults([]);
+      setSources([]);
+    } finally {
       setSearching(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -156,26 +194,67 @@ const JobSearch = () => {
             placeholder="Search jobs..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && simulateSearch()}
+            onKeyDown={(e) => e.key === 'Enter' && fetchJobs()}
           />
-          <button onClick={simulateSearch} className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 rounded-xl shadow-lg">Search</button>
+          <button onClick={fetchJobs} className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 rounded-xl shadow-lg">Search</button>
         </div>
       </div>
 
       {searching ? (
-        <div className="text-center py-20 text-slate-500">Aggregating jobs...</div>
+        <div className="text-center py-20 text-slate-500">Searching across job boards...</div>
       ) : (
-        <div className="grid gap-4">
-          {results.map(job => (
-            <div key={job.id} className="bg-white p-5 rounded-xl border border-slate-200 flex justify-between items-center">
-               <div>
-                  <h3 className="font-bold text-lg text-slate-800">{job.title}</h3>
-                  <div className="text-sm text-slate-600">{job.company} • {job.location}</div>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase mt-2 inline-block ${job.platform.color} ${job.platform.text || ''}`}>{job.platform.name}</span>
-               </div>
-               <a href={job.platform.url + encodeURIComponent(query)} target="_blank" rel="noreferrer" className="text-blue-600 font-bold text-sm border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-50">Apply</a>
+        <div className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+              {error}
             </div>
-          ))}
+          )}
+          {apiErrors.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-700 text-xs px-4 py-3 rounded-lg">
+              {apiErrors.map((item, idx) => (
+                <div key={idx}>{item.source}: {item.message}</div>
+              ))}
+            </div>
+          )}
+          {results.length > 0 ? (
+            <div className="grid gap-4">
+              {results.map((job) => (
+                <div key={job.id} className="bg-white p-5 rounded-xl border border-slate-200 flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-lg text-slate-800">{job.title}</h3>
+                    <div className="text-sm text-slate-600">
+                      {job.company} • {job.location}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                      {job.salary && <span>{job.salary}</span>}
+                      {job.postedAt && <span>Posted {new Date(job.postedAt).toLocaleDateString()}</span>}
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase mt-2 inline-block ${getSourceBadge(job.source)}`}>
+                      {job.source || "Job Board"}
+                    </span>
+                  </div>
+                  <a href={job.applyUrl} target="_blank" rel="noreferrer" className="text-blue-600 font-bold text-sm border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-50">Apply</a>
+                </div>
+              ))}
+            </div>
+          ) : hasSearched ? (
+            <div className="bg-white border border-slate-200 rounded-xl p-6 text-slate-600 text-sm">
+              <p className="font-semibold text-slate-800 mb-3">No jobs returned yet.</p>
+              <p className="mb-4">You can also open the live results directly on each job site:</p>
+              <div className="flex flex-wrap gap-2">
+                {(sources.length > 0 ? sources : getFallbackSources()).map((source) => (
+                  <a key={source.name} href={source.searchUrl} target="_blank" rel="noreferrer" className="bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center">
+                    {source.name} <ExternalLink className="w-3 h-3 ml-2 opacity-60" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-xl p-6 text-slate-600 text-sm">
+              <p className="font-semibold text-slate-800 mb-2">Start searching to see live results.</p>
+              <p>Tip: Try role titles like "HR executive", "barista", or "software engineer".</p>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -228,16 +307,269 @@ const PartTimeJobSearch = () => {
   );
 };
 
-// --- LIVELY AI CHAT COMPONENT (UPDATED WITH ADK) ---
+// --- PART TIME POSTING BOARD ---
+const PartTimeBoard = () => {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [form, setForm] = useState({
+    title: "",
+    pay: "",
+    location: "",
+    schedule: "",
+    description: "",
+    contactName: "",
+    contactMethod: "email",
+    contactValue: "",
+  });
+
+  const loadPosts = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/part-time`);
+      const data = await response.json();
+      setPosts(data.posts || []);
+    } catch (err) {
+      setError("Unable to load part-time posts.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const getContactHref = (method, value) => {
+    const trimmed = value.trim();
+    if (method === "phone") return `tel:${trimmed}`;
+    if (method === "whatsapp") return `https://wa.me/${trimmed.replace(/\D/g, "")}`;
+    return `mailto:${trimmed}`;
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+
+    if (!form.title.trim() || !form.pay.trim() || !form.location.trim() || !form.contactValue.trim()) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/part-time`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to post job.");
+      }
+      const data = await response.json();
+      setPosts((prev) => [data.post, ...prev]);
+      setForm({
+        title: "",
+        pay: "",
+        location: "",
+        schedule: "",
+        description: "",
+        contactName: "",
+        contactMethod: "email",
+        contactValue: "",
+      });
+      setNotice("Your post is live. Thanks for contributing!");
+    } catch (err) {
+      setError(err.message || "Unable to post job.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fadeIn">
+      <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-8 rounded-2xl shadow-xl text-white">
+        <h2 className="text-2xl font-bold mb-2 flex items-center">
+          <PlusCircle className="w-6 h-6 mr-2" /> Post a Part-Time Role
+        </h2>
+        <p className="text-amber-100">
+          Share flexible shifts with the community and connect directly with candidates.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <h3 className="font-bold text-slate-800">New Job Posting</h3>
+          {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
+          {notice && <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{notice}</div>}
+          <div>
+            <label className="text-xs font-semibold text-slate-600">Job Title *</label>
+            <input
+              className="mt-1 w-full p-3 border border-slate-200 rounded-lg"
+              value={form.title}
+              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+              placeholder="Cafe Assistant"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Pay / Rate *</label>
+              <input
+                className="mt-1 w-full p-3 border border-slate-200 rounded-lg"
+                value={form.pay}
+                onChange={(e) => setForm((prev) => ({ ...prev, pay: e.target.value }))}
+                placeholder="$12 - $16/hr"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Location *</label>
+              <input
+                className="mt-1 w-full p-3 border border-slate-200 rounded-lg"
+                value={form.location}
+                onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
+                placeholder="Bugis"
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-600">Schedule</label>
+            <input
+              className="mt-1 w-full p-3 border border-slate-200 rounded-lg"
+              value={form.schedule}
+              onChange={(e) => setForm((prev) => ({ ...prev, schedule: e.target.value }))}
+              placeholder="Weekends, 6pm - 11pm"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-600">Description</label>
+            <textarea
+              className="mt-1 w-full p-3 border border-slate-200 rounded-lg min-h-[120px]"
+              value={form.description}
+              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+              placeholder="Responsibilities, dress code, and requirements."
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Contact Name</label>
+              <input
+                className="mt-1 w-full p-3 border border-slate-200 rounded-lg"
+                value={form.contactName}
+                onChange={(e) => setForm((prev) => ({ ...prev, contactName: e.target.value }))}
+                placeholder="Hiring Manager"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Contact Method *</label>
+              <select
+                className="mt-1 w-full p-3 border border-slate-200 rounded-lg bg-white"
+                value={form.contactMethod}
+                onChange={(e) => setForm((prev) => ({ ...prev, contactMethod: e.target.value }))}
+              >
+                <option value="email">Email</option>
+                <option value="phone">Phone</option>
+                <option value="whatsapp">WhatsApp</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-600">Contact Details *</label>
+            <input
+              className="mt-1 w-full p-3 border border-slate-200 rounded-lg"
+              value={form.contactValue}
+              onChange={(e) => setForm((prev) => ({ ...prev, contactValue: e.target.value }))}
+              placeholder="name@email.com or +6591234567"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-lg"
+            disabled={saving}
+          >
+            {saving ? "Posting..." : "Publish Job"}
+          </button>
+        </form>
+
+        <div className="space-y-4">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-slate-800">Latest Community Posts</h3>
+              <p className="text-sm text-slate-500">Connect directly with employers.</p>
+            </div>
+            <div className="flex items-center text-xs text-slate-500">
+              <Clock className="w-4 h-4 mr-1" />
+              Updated live
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="text-center text-slate-500 py-10">Loading posts...</div>
+          ) : (
+            <div className="space-y-4">
+              {posts.length === 0 && (
+                <div className="text-center text-slate-500 py-10 bg-white rounded-xl border border-slate-200">
+                  No posts yet. Be the first to share a role!
+                </div>
+              )}
+              {posts.map((post) => (
+                <div key={post.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-bold text-slate-800">{post.title}</h4>
+                      <div className="text-sm text-slate-500">{post.location} • {post.pay}</div>
+                    </div>
+                    <span className="text-xs text-slate-400">
+                      {new Date(post.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  {post.schedule && <div className="text-xs text-slate-500 mt-2">Schedule: {post.schedule}</div>}
+                  {post.description && <p className="text-sm text-slate-600 mt-3">{post.description}</p>}
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <div className="text-xs text-slate-500">
+                      {post.contactName ? `Contact: ${post.contactName}` : "Contact available"}
+                    </div>
+                    <a
+                      href={getContactHref(post.contactMethod, post.contactValue)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center text-sm font-bold text-amber-700 hover:underline"
+                    >
+                      {post.contactMethod === "email" && <Mail className="w-4 h-4 mr-1" />}
+                      {post.contactMethod === "phone" && <Phone className="w-4 h-4 mr-1" />}
+                      {post.contactMethod === "whatsapp" && <MessageSquare className="w-4 h-4 mr-1" />}
+                      Contact
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- LIVELY AI CHAT COMPONENT (OPENAI BACKEND) ---
 const AIChat = () => {
   const [messages, setMessages] = useState([
-    { role: 'agent', content: "Hello! 👋 I'm your HR Assistant.\n\nI can use **Google Gemini** to answer complex questions about SG Law, or use my offline database." }
+    { role: 'agent', content: "Hello! 👋 I'm your HR Assistant.\n\nAsk me about SG HR rules, CPF, leave, or hiring. I can switch between **OpenAI** (online) and offline mode." }
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [useRealAI, setUseRealAI] = useState(false);
-  const [apiKey, setApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || "");
-  const [showKeyInput, setShowKeyInput] = useState(false);
+  const quickPrompts = [
+    "What are the 2025 CPF contribution rates?",
+    "Summarize parental leave updates.",
+    "How do I handle wrongful dismissal?",
+    "What is COMPASS for EP applications?",
+  ];
   
   const scrollRef = useRef(null);
   const agentRef = useRef(null);
@@ -246,12 +578,12 @@ const AIChat = () => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isTyping]);
 
-  // Initialize Real Agent if key exists
+  // Initialize Real Agent when toggled on
   useEffect(() => {
-    if (apiKey && useRealAI) {
-      agentRef.current = new HRAgent(apiKey);
+    if (useRealAI) {
+      agentRef.current = new HRAgent(API_BASE);
     }
-  }, [apiKey, useRealAI]);
+  }, [useRealAI]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -261,8 +593,7 @@ const AIChat = () => {
     setIsTyping(true);
 
     if (useRealAI && agentRef.current) {
-        // REAL AI PATH
-        const response = await agentRef.current.chat(userMsg.content, messages);
+        const response = await agentRef.current.chat(userMsg.content, [...messages, userMsg]);
         setIsTyping(false);
         setMessages(prev => [...prev, { 
             role: 'agent', 
@@ -291,7 +622,7 @@ const AIChat = () => {
             <div>
                 <h3 className="font-bold">HR Assistant AI</h3>
                 <p className="text-[10px] text-blue-100 uppercase tracking-wider">
-                    {useRealAI ? "⚡ Power: Google Gemini (ADK)" : "🔋 Power: Offline Rules"}
+                    {useRealAI ? "⚡ Power: OpenAI (Server)" : "🔋 Power: Offline Rules"}
                 </p>
             </div>
             </div>
@@ -302,38 +633,16 @@ const AIChat = () => {
         <div className="flex items-center text-xs bg-black/20 p-2 rounded-lg">
             <label className="flex items-center cursor-pointer select-none">
                 <div className="relative">
-                    <input type="checkbox" className="sr-only" checked={useRealAI} onChange={() => {
-                        if (!apiKey && !useRealAI) setShowKeyInput(true);
-                        setUseRealAI(!useRealAI);
-                    }} />
+                    <input type="checkbox" className="sr-only" checked={useRealAI} onChange={() => setUseRealAI(!useRealAI)} />
                     <div className={`block w-10 h-6 rounded-full transition-colors ${useRealAI ? 'bg-green-400' : 'bg-slate-600'}`}></div>
                     <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${useRealAI ? 'transform translate-x-4' : ''}`}></div>
                 </div>
                 <div className="ml-3 font-medium">
-                    {useRealAI ? "Online Agent (Gemini)" : "Offline Mode"}
+                    {useRealAI ? "Online Agent (OpenAI)" : "Offline Mode"}
                 </div>
             </label>
-            {!apiKey && useRealAI && <button onClick={() => setShowKeyInput(true)} className="ml-auto underline text-yellow-300">Set Key</button>}
         </div>
       </div>
-
-      {/* API KEY INPUT MODAL */}
-      {showKeyInput && (
-        <div className="bg-yellow-50 p-4 border-b border-yellow-200 text-xs text-yellow-800">
-            <p className="mb-2 font-bold">Enter Google Gemini API Key to enable the Agent:</p>
-            <div className="flex gap-2">
-                <input 
-                    type="password" 
-                    placeholder="AIzaSy..." 
-                    className="flex-1 p-2 border rounded"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                />
-                <button onClick={() => setShowKeyInput(false)} className="bg-yellow-600 text-white px-3 rounded">Save</button>
-            </div>
-            <p className="mt-1 opacity-70">Get one free at aistudio.google.com</p>
-        </div>
-      )}
 
       {/* CHAT AREA */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50" ref={scrollRef}>
@@ -366,7 +675,18 @@ const AIChat = () => {
         )}
       </div>
 
-      <div className="p-4 bg-white border-t border-slate-100">
+      <div className="p-4 bg-white border-t border-slate-100 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {quickPrompts.map((prompt) => (
+            <button
+              key={prompt}
+              onClick={() => setInput(prompt)}
+              className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-full"
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
         <div className="flex gap-2">
           <input
             type="text"
@@ -428,6 +748,12 @@ function App() {
                 <p className="text-sm text-slate-500">Find flexible shifts, ad-hoc jobs, and weekend work.</p>
               </button>
 
+              <button onClick={() => setActiveTab('part_time_board')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-all text-left group">
+                <div className="text-amber-600 bg-amber-50 w-10 h-10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><PlusCircle className="w-5 h-5" /></div>
+                <h3 className="font-bold text-slate-800 mb-2">Post Part-Time Jobs</h3>
+                <p className="text-sm text-slate-500">Let the community apply directly with one click.</p>
+              </button>
+
               <button onClick={() => setActiveTab('leave')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-all text-left group">
                 <div className="text-purple-600 bg-purple-50 w-10 h-10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><Shield className="w-5 h-5" /></div>
                 <h3 className="font-bold text-slate-800 mb-2">2025 Compliance</h3>
@@ -445,6 +771,7 @@ function App() {
         );
       case 'jobs': return <JobSearch />;
       case 'part_time': return <PartTimeJobSearch />;
+      case 'part_time_board': return <PartTimeBoard />;
       case 'cpf': return <div className="space-y-6 animate-fadeIn"><h2 className="text-2xl font-bold text-slate-800">CPF & Payroll</h2><InfoCard title="Latest CPF Regulations" data={LEGAL_DATA.cpf} /></div>;
       case 'leave': return <div className="space-y-6 animate-fadeIn"><h2 className="text-2xl font-bold text-slate-800">Leave & Time Off</h2><InfoCard title="Statutory Leave Entitlements" data={LEGAL_DATA.leave} /></div>;
       case 'foreign': return <div className="space-y-6 animate-fadeIn"><h2 className="text-2xl font-bold text-slate-800">Foreign Manpower</h2><InfoCard title="Work Passes & Quotas" data={LEGAL_DATA.work_passes} /></div>;
@@ -470,6 +797,7 @@ function App() {
           <div className="my-4 border-t border-slate-100"></div>
           <SidebarItem icon={Search} label={isSidebarOpen ? "Job Search" : ""} active={activeTab === 'jobs'} onClick={() => setActiveTab('jobs')} />
           <SidebarItem icon={Clock} label={isSidebarOpen ? "Part-Time / Gigs" : ""} active={activeTab === 'part_time'} onClick={() => setActiveTab('part_time')} />
+          <SidebarItem icon={PlusCircle} label={isSidebarOpen ? "Post Part-Time" : ""} active={activeTab === 'part_time_board'} onClick={() => setActiveTab('part_time_board')} />
           <SidebarItem icon={Shield} label={isSidebarOpen ? "CPF & Payroll" : ""} active={activeTab === 'cpf'} onClick={() => setActiveTab('cpf')} />
           <SidebarItem icon={Users} label={isSidebarOpen ? "Leave & Benefits" : ""} active={activeTab === 'leave'} onClick={() => setActiveTab('leave')} />
           <SidebarItem icon={BookOpen} label={isSidebarOpen ? "Work Passes" : ""} active={activeTab === 'foreign'} onClick={() => setActiveTab('foreign')} />
