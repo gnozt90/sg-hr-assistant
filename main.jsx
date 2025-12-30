@@ -155,6 +155,13 @@ const JobSearch = () => {
     setError("");
     setApiErrors([]);
 
+    if (!API_BASE) {
+      setResults([]);
+      setSources(getFallbackSources());
+      setSearching(false);
+      return;
+    }
+
     try {
       const response = await fetch(
         `${API_BASE}/api/jobs?query=${encodeURIComponent(query)}`
